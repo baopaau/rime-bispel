@@ -1,0 +1,328 @@
+# Rime schema
+# encoding: utf-8
+
+schema:
+  schema_id: bbspell
+  name: 雙拼
+  version: "1.0"
+  author:
+    - 抱豹 <baopaau@gmail.com>
+   
+  description: |
+    zh/ch/sh 合併至 j/q/x
+    ji/qi/xi 變 zi/ci/si
+
+  dependencies:
+    - terra_pinyin
+
+switches:
+  - name: ascii_mode
+    states: [ 中文, ASCII ]
+    reset: 0
+  - name: full_shape
+    states: [ 半寬, 全寬 ]
+  - options: [ noop, simplification, trad_tw ]
+    states: [ 原形, 陆简, 臺正 ]
+    reset: 0
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+  - name: emoji_suggestion
+    states: [ ＊ , Emoji ]
+    reset: 1
+
+engine:
+  processors:
+    - ascii_composer
+    - recognizer
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - table_translator@custom_phrase
+    - reverse_lookup_translator
+    - script_translator
+  filters:
+    - simplifier@trad_tw
+    - simplifier
+    - simplifier@emoji_suggestion
+    - uniquifier
+
+speller:
+  alphabet: zyxwvutsrqponmlkjihgfedcba
+  delimiter: " '"
+  algebra:
+    - erase/^xx$/
+    - xform/\<m(\d)$/mu$1/  # 呣
+    - xform/\<r5?$/er5/  # 〜兒
+    - xform/iu/iou/
+    - xform/ui/uei/
+    - xform/ong/ung/
+    - xform/\<yi?/i/
+    - xform/\<wu?/u/
+    - xform/iu/v/
+    - xform/\<([jqx])u/$1v/
+    - xform/([iuv])n/$1en/
+    - xform/\<zhi?/Z/
+    - xform/\<chi?/C/
+    - xform/\<shi?/S/
+    - xform/\<([zcsr])i/$1/
+    - xform/ai/A/
+    - xform/ei/I/
+    - xform/ao/O/
+    - xform/ou/U/
+    - xform/ang/K/
+    - xform/eng/G/
+    - xform/an/M/
+    - xform/en/N/
+    - xform/er/R/
+    - xform/eh/E/
+    - xform/([iv])e/$1E/
+
+    # ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦˉˊˇˋ˙
+    - xlit|bpmfdtnlgkhjqxZCSrzcsiuvaoeEAIOUMNKGR12345|bpmfdtnlgkhjqxJQXRZCSiuvaoeeyjwlmnqkr12345|
+    #     |bpmfdtnlgkhjqxJQXRZCSiuvaoeEyjwlmnqkr12345|
+
+    # 補上空韻
+    - xform|\<([JQXR])([1-5])\>|\l$1r$2|
+    - xform|\<([ZCS])([1-5])\>|\l$1z$2|
+
+    # 零聲母
+    - xform|\<i([1-5])\>|ii$1|
+    - xform|\<u([1-5])\>|uu$1|
+    - xform|\<v([1-5])\>|yu$1|
+    - xform|\<a([1-5])\>|aa$1|
+    - xform|\<o([1-5])\>|oo$1|
+    - xform|\<e([1-5])\>|ee$1|
+    - xform|\<E([1-5])\>|eh$1| # ㄝ
+    - xform|\<y([1-5])\>|ai$1|
+    - xform|\<j([1-5])\>|ei$1|
+    - xform|\<w([1-5])\>|au$1|
+    - xform|\<l([1-5])\>|ou$1|
+    - xform|\<m([1-5])\>|an$1|
+    - xform|\<n([1-5])\>|en$1|
+    - xform|\<q([1-5])\>|ak$1|
+    - xform|\<k([1-5])\>|ek$1|
+    - xform|\<r([1-5])\>|er$1|
+
+    - xform|\<v|y|
+
+    - xform|\<([JQXRZCSE])|\l$1|
+
+    # 開始雙拼
+    # 
+    - xform/\<ji/zi/
+    - xform/\<qi/ci/
+    - xform/\<xi/si/
+
+    - xform|\<([jqxr])v([1-5])\>|$1x$2|
+    - xform|\<([jqxr])ve([1-5])\>|$1d$2|
+    - xform|\<([jqxr])vm([1-5])\>|$1b$2|
+    - xform|\<([jqxr])vn([1-5])\>|$1h$2|
+    - xform|\<([jqxr])vk([1-5])\>|$1s$2|
+
+    - xform|\<([zcs])uj([1-5])\>|$1b$2|
+    - xform|\<([zcs])um([1-5])\>|$1v$2|
+    - xform|\<([zcs])un([1-5])\>|$1f$2|
+    - xform|\<([zcs])uk([1-5])\>|$1s$2|
+
+    #- "xform|\<([nl])o([1-5])\>|$1'$2|"
+    - xform|\<([dtnlgkhjqxrzcs])uo([1-5])\>|$1o$2|
+
+    - xform|\<([a-z])ia([1-5])\>|$1h$2|
+    - xform|\<([a-z])ie([1-5])\>|$1d$2|
+    - xform|\<([a-z])iw([1-5])\>|$1r$2|
+    - xform|\<([a-z])il([1-5])\>|$1x$2|
+    - xform|\<([a-z])im([1-5])\>|$1p$2|
+    - xform|\<([a-z])in([1-5])\>|$1t$2|
+    - xform|\<([a-z])iq([1-5])\>|$1c$2|
+    - xform|\<([a-z])ik([1-5])\>|$1g$2|
+
+    - xform|\<([dt])uj([1-5])\>|$1s$2|
+    - xform|\<([dt])um([1-5])\>|$1f$2|
+    - xform|\<([dt])un([1-5])\>|$1v$2|
+    - xform|\<([dt])uk([1-5])\>|$1c$2|
+
+    - xform|\<([nl])ve([1-5])\>|$1b$2|
+    - xform|\<([nl])um([1-5])\>|$1s$2|
+    - xform|\<([nl])un([1-5])\>|$1z$2|
+    - xform|\<([nl])uk([1-5])\>|$1f$2|
+
+    - xform|\<([gkhjqxr])uy([1-5])\>|$1f$2|
+    - xform|\<([gkhjqxr])uj([1-5])\>|$1v$2|
+    - xform|\<([gkhjqxr])um([1-5])\>|$1p$2|
+    - xform|\<([gkhjqxr])un([1-5])\>|$1t$2|
+    - xform|\<([gkhjqxr])uq([1-5])\>|$1c$2|
+    - xform|\<([gkhjqxr])uk([1-5])\>|$1g$2|
+        
+    # 簡拼
+    - derive/[12345]$//
+
+    - derive/1$/v/
+    - derive/2$/w/
+    - derive/3$/vv/
+    - derive/4$/ww/
+    - abbrev/^([a-z]).+$/$1/
+   
+translator:
+  dictionary: terra_pinyin
+  prism: bbspell
+  spelling_hints: 7  # ～字以內候選標註完整帶調拼音
+  comment_format: &comment
+    - erase/^xx$/
+    - xform/\<m(\d)$/mu$1/  # 呣
+    - xform/\<r5$/er5/  # 〜兒
+    - xform/iu/iou/
+    - xform/ui/uei/
+    - xform/ong/ung/
+    - xform/\<yi?/i/
+    - xform/\<wu?/u/
+    - xform/iu/v/
+    - xform/\<([jqx])u/$1v/
+    - xform/([iuv])n/$1en/
+    - xform/\<zhi?/Z/
+    - xform/\<chi?/C/
+    - xform/\<shi?/S/
+    - xform/\<([zcsr])i/$1/
+    - xform/ai/A/
+    - xform/ei/I/
+    - xform/ao/O/
+    - xform/ou/U/
+    - xform/ang/K/
+    - xform/eng/G/
+    - xform/an/M/
+    - xform/en/N/
+    - xform/er/R/
+    - xform/eh/E/
+    - xform/([iv])e/$1E/
+
+    # ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦˉˊˇˋ˙
+    - xlit|bpmfdtnlgkhjqxZCSrzcsiuvaoeEAIOUMNKGR12345|bpmfdtnlgkhjqxJQXRZCSiuvaoeeyjwlmnqkr12345|
+    #     |bpmfdtnlgkhjqxJQXRZCSiuvaoeEyjwlmnqkr12345|
+
+    # 補上空韻
+    - xform|\<([JQXR])([1-5])\>|\l$1r$2|
+    - xform|\<([ZCS])([1-5])\>|\l$1z$2|
+
+    # 零聲母
+    - xform|\<i([1-5])\>|ii$1|
+    - xform|\<u([1-5])\>|uu$1|
+    - xform|\<v([1-5])\>|yu$1|
+    - xform|\<a([1-5])\>|aa$1|
+    - xform|\<o([1-5])\>|oo$1|
+    - xform|\<e([1-5])\>|ee$1|
+    - xform|\<E([1-5])\>|eh$1| # ㄝ
+    - xform|\<y([1-5])\>|ai$1|
+    - xform|\<j([1-5])\>|ei$1|
+    - xform|\<w([1-5])\>|au$1|
+    - xform|\<l([1-5])\>|ou$1|
+    - xform|\<m([1-5])\>|an$1|
+    - xform|\<n([1-5])\>|en$1|
+    - xform|\<q([1-5])\>|ak$1|
+    - xform|\<k([1-5])\>|ek$1|
+    - xform|\<r([1-5])\>|er$1|
+
+    - xform|\<v|y|
+
+    - xform|\<([JQXRZCSE])|\l$1|
+
+    # 開始雙拼
+    # 
+    - xform/\<ji/zi/
+    - xform/\<qi/ci/
+    - xform/\<xi/si/
+
+    - xform|\<([jqxr])v([1-5])\>|$1x$2|
+    - xform|\<([jqxr])ve([1-5])\>|$1d$2|
+    - xform|\<([jqxr])vm([1-5])\>|$1b$2|
+    - xform|\<([jqxr])vn([1-5])\>|$1h$2|
+    - xform|\<([jqxr])vk([1-5])\>|$1s$2|
+
+    - xform|\<([zcs])uj([1-5])\>|$1b$2|
+    - xform|\<([zcs])um([1-5])\>|$1v$2|
+    - xform|\<([zcs])un([1-5])\>|$1f$2|
+    - xform|\<([zcs])uk([1-5])\>|$1s$2|
+
+    #- "xform|\<([nl])o([1-5])\>|$1'$2|"
+    - xform|\<([dtnlgkhjqxrzcs])uo([1-5])\>|$1o$2|
+
+    - xform|\<([a-z])ia([1-5])\>|$1h$2|
+    - xform|\<([a-z])ie([1-5])\>|$1d$2|
+    - xform|\<([a-z])iw([1-5])\>|$1r$2|
+    - xform|\<([a-z])il([1-5])\>|$1x$2|
+    - xform|\<([a-z])im([1-5])\>|$1p$2|
+    - xform|\<([a-z])in([1-5])\>|$1t$2|
+    - xform|\<([a-z])iq([1-5])\>|$1c$2|
+    - xform|\<([a-z])ik([1-5])\>|$1g$2|
+
+    - xform|\<([dt])uj([1-5])\>|$1s$2|
+    - xform|\<([dt])um([1-5])\>|$1f$2|
+    - xform|\<([dt])un([1-5])\>|$1v$2|
+    - xform|\<([dt])uk([1-5])\>|$1c$2|
+
+    - xform|\<([nl])ve([1-5])\>|$1b$2|
+    - xform|\<([nl])um([1-5])\>|$1s$2|
+    - xform|\<([nl])un([1-5])\>|$1z$2|
+    - xform|\<([nl])uk([1-5])\>|$1f$2|
+
+    - xform|\<([gkhjqxr])uy([1-5])\>|$1f$2|
+    - xform|\<([gkhjqxr])uj([1-5])\>|$1v$2|
+    - xform|\<([gkhjqxr])um([1-5])\>|$1p$2|
+    - xform|\<([gkhjqxr])un([1-5])\>|$1t$2|
+    - xform|\<([gkhjqxr])uq([1-5])\>|$1c$2|
+    - xform|\<([gkhjqxr])uk([1-5])\>|$1g$2|
+
+    # 聲調
+    - xlit|12345|̄́̌̀̇| # 修飾符
+
+  preedit_format:
+    # 聲調
+
+custom_phrase:
+  dictionary: ""
+  user_dict: custom_phrase
+  db_class: stabledb
+  enable_completion: false
+  enable_sentence: false
+  initial_quality: 1
+
+reverse_lookup:
+  overwrite_comment: true
+  dictionary: terra_pinyin
+  prism: terra_pinyin
+  prefix: "`"
+  suffix: "'"
+  tips: 〔漢語拼音〕
+  comment_format: *comment
+
+trad_tw:
+  option_name: trad_tw
+  opencc_config: t2tw.json
+
+emoji_suggestion:
+  opencc_config: emoji.json
+  option_name: emoji_suggestion
+  tips: all
+
+punctuator:
+  import_preset: default
+
+key_binder:
+  import_preset: default
+  bindings:
+    - { when: has_menu, accept: space, send: Shift+Return }
+  
+recognizer:
+  import_preset: default
+  patterns:
+    punct: "^/.*$"
+    reverse_lookup: "^`.*$"
